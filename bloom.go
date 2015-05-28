@@ -1,5 +1,9 @@
 package bloom
 
+import (
+	"errors"
+)
+
 type Bloom struct {
 	k          uint
 	m          uint64
@@ -20,4 +24,19 @@ func NewBloom(m uint64, k uint) Bloom {
 	}
 
 	return b
+}
+
+func (b *Bloom) SetBit(pos uint64) error {
+	if pos >= b.m {
+		return errors.New("pos exceeds b.m")
+	}
+	var block uint64 = pos / 64
+	var offset uint = uint(pos % 64)
+
+	var t uint64
+	t = 1 << offset
+
+	b.collection[block] |= t
+
+	return nil
 }
