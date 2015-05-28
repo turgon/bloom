@@ -44,5 +44,13 @@ func TestSetBit(t *testing.T) {
 		t.Errorf("Set unexpected bit!")
 	}
 	fmt.Println(b)
-	
+
+}
+
+func BenchmarkSetBit(b *testing.B) {
+	s := NewBloom(uint64(b.N), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.SetBit(uint64(i))
+	}
 }
