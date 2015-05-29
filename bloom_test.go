@@ -47,6 +47,18 @@ func TestSetBit(t *testing.T) {
 
 }
 
+func TestPositions(t *testing.T) {
+	b := NewBloom(16, 4)
+	for i, v := range b.positions([]byte("test")) {
+		fmt.Println(i, v)
+	}
+}
+
+func TestAdd(t *testing.T) {
+	s := NewBloom(1, 1)
+	s.Add([]byte("test"))
+}
+
 func BenchmarkSetBit(b *testing.B) {
 	s := NewBloom(uint64(b.N), 1)
 	b.ResetTimer()
