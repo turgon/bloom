@@ -1,7 +1,6 @@
 package bloom
 
 import (
-	"errors"
 	"github.com/spaolacci/murmur3"
 )
 
@@ -27,25 +26,47 @@ func NewBloom(m uint64, k uint) Bloom {
 	return b
 }
 
-func (b *Bloom) SetBit(pos uint64) error {
-	if pos >= b.m {
-		return errors.New("pos exceeds b.m")
-	}
-	var block uint64 = pos / 64
+func singlemask(pos uint64) uint64 {
 	var offset uint = uint(pos % 64)
-
 	var t uint64
+
 	t = 1 << offset
 
-	b.collection[block] |= t
-
-	return nil
+	return t
 }
 
-func (b *Bloom) positions (x []byte) []uint64 {
+func (b *Bloom) SetBit(pos uint64) {
+
+	if pos >= b.m {
+		return
+	}
+
+	var block uint64 = pos / 64
+
+	t := singlemask(pos)
+
+	b.collection[block] |= t
+}
+
+func (b *Bloom) HasBit(pos uint64) bool {
+	if pos >= b.m {
+		return false
+	}
+
+	var block uint64 = pos / 64
+	t := singlemask(pos)
+	return b.collection[block] & t > 0	
+}
+
+func hash(x []byte) (uint64, uint64) {
 	var h murmur3.Hash128 = murmur3.New128()
 	h.Write([]byte(x))
 	v1, v2 := h.Sum128()
+	return v1, v2
+}
+
+func (b *Bloom) positions (x []byte) []uint64 {
+	v1, v2 := hash(x)
 
 	poss := make([]uint64, b.k)
 
@@ -57,9 +78,19 @@ func (b *Bloom) positions (x []byte) []uint64 {
 }
 
 func (b *Bloom) Add(x []byte) {
-	for _, v := range b.positions(x) {
+	positions := b.positions(x)
+	for _, v := range positions {
 		b.SetBit(v)
 	}
 }
 
+func (b *Bloom) Has(x []byte) bool {
+	positions := b.positions(x)
+	for _, v := range positions {
+		if !b.HasBit(v) {
+			return false
+		}
+	}
+	return true
+}
 
