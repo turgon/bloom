@@ -8,7 +8,10 @@ type Bloom struct {
 	k          uint
 	m          uint64
 	collection []uint64
+	hasher BloomHasher
 }
+
+type BloomHasher func (b *Bloom, value []byte) ([]uint64)
 
 func NewBloom(m uint64, k uint) Bloom {
 
@@ -20,77 +23,46 @@ func NewBloom(m uint64, k uint) Bloom {
 	b := Bloom{
 		k:          k,
 		m:          m,
-		collection: make([]uint64, length, length),
+		collection: make([]uint64, length),
+		hasher:	hasher,
 	}
 
 	return b
 }
 
-func singlemask(pos uint64) uint64 {
-	var offset uint = uint(pos % 64)
-	var t uint64
-
-	t = 1 << offset
-
-	return t
-}
-
-func (b *Bloom) SetBit(pos uint64) {
-
-	if pos >= b.m {
-		return
-	}
-
-	var block uint64 = pos / 64
-
-	t := singlemask(pos)
-
-	b.collection[block] |= t
-}
-
-func (b *Bloom) HasBit(pos uint64) bool {
-	if pos >= b.m {
-		return false
-	}
-
-	var block uint64 = pos / 64
-	t := singlemask(pos)
-	return b.collection[block] & t > 0	
-}
-
-func hash(x []byte) (uint64, uint64) {
+var hasher = func (b *Bloom, value []byte) ([]uint64) {
 	var h murmur3.Hash128 = murmur3.New128()
-	h.Write([]byte(x))
+	h.Write(value)
 	v1, v2 := h.Sum128()
-	return v1, v2
-}
 
-func (b *Bloom) positions (x []byte) []uint64 {
-	v1, v2 := hash(x)
-
-	poss := make([]uint64, b.k)
-
-	var i uint
-	for i = 0; i < b.k; i++ {
-		poss[i] = ((v1 + uint64(i) * v2) % b.m)
+	positions := make([]uint64, b.k)	
+	for i := range positions {
+		positions[i] = ((v1 + uint64(i) * v2) % b.m)
 	}
-	return poss
+	return positions
 }
 
-func (b *Bloom) Add(x []byte) {
-	positions := b.positions(x)
-	for _, v := range positions {
-		b.SetBit(v)
+func (b *Bloom) Insert(value []byte) {
+	positions := b.hasher(b, value)
+
+	for _, pos := range positions {
+		var slot = pos / 64
+		var offset = uint((pos - slot*64) % 64)
+
+		b.collection[slot] |= (1 << offset)
 	}
 }
 
-func (b *Bloom) Has(x []byte) bool {
-	positions := b.positions(x)
-	for _, v := range positions {
-		if !b.HasBit(v) {
+func (b *Bloom) Test(value []byte) bool {
+	positions := b.hasher(b, value)
+
+	for _, pos := range positions {
+		var slot = pos / 64
+		var offset = uint((pos - slot*64) % 64)
+
+		if (b.collection[slot] & (1 << offset)) == 0 {
 			return false
 		}
 	}
 	return true
 }
-
