@@ -30,10 +30,14 @@ func NewBloom(m uint64, k uint) Bloom {
 	return b
 }
 
-var hasher = func (b *Bloom, value []byte) ([]uint64) {
+func murmur3_128(value []byte) (uint64, uint64) {
 	var h murmur3.Hash128 = murmur3.New128()
 	h.Write(value)
-	v1, v2 := h.Sum128()
+	return h.Sum128()
+}
+
+var hasher = func (b *Bloom, value []byte) ([]uint64) {
+	v1, v2 := murmur3_128(value)
 
 	positions := make([]uint64, b.k)	
 	for i := range positions {
