@@ -8,10 +8,10 @@ type Bloom struct {
 	k          uint
 	m          uint64
 	collection []uint64
-	hasher BloomHasher
+	hasher     BloomHasher
 }
 
-type BloomHasher func (b *Bloom, value []byte) ([]uint64)
+type BloomHasher func(b *Bloom, value []byte) []uint64
 
 func NewBloom(m uint64, k uint) Bloom {
 
@@ -24,7 +24,7 @@ func NewBloom(m uint64, k uint) Bloom {
 		k:          k,
 		m:          m,
 		collection: make([]uint64, length),
-		hasher:	hasher,
+		hasher:     hasher,
 	}
 
 	return b
@@ -36,12 +36,12 @@ func murmur3_128(value []byte) (uint64, uint64) {
 	return h.Sum128()
 }
 
-var hasher = func (b *Bloom, value []byte) ([]uint64) {
+var hasher = func(b *Bloom, value []byte) []uint64 {
 	v1, v2 := murmur3_128(value)
 
-	positions := make([]uint64, b.k)	
+	positions := make([]uint64, b.k)
 	for i := range positions {
-		positions[i] = ((v1 + uint64(i) * v2) % b.m)
+		positions[i] = ((v1 + uint64(i)*v2) % b.m)
 	}
 	return positions
 }
