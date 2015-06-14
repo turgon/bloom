@@ -36,6 +36,15 @@ func TestInsertAndTest(t *testing.T) {
 	}
 }
 
+func randByteSlice(len int) []byte {
+	rbs := make([]byte, len)
+
+	for i := 0; i < len; i++ {
+		rbs[i] = byte(rand.Int())
+	}
+	return rbs
+}
+
 func TestAvalanche(t *testing.T) {
 	wordLen := 32
 	pairs := 1000000
@@ -64,7 +73,6 @@ func TestAvalanche(t *testing.T) {
 
 		avalanche[i][0] = inputsc[i][0] ^ tweakedc[i][0]
 		avalanche[i][1] = inputsc[i][1] ^ tweakedc[i][1]
-		// fmt.Printf("%64.64b%64.64b\n\n\n", avalanche[i][0], avalanche[i][1])
 	}
 
 	B := make([]uint64, pairs)
@@ -99,4 +107,69 @@ func TestAvalanche(t *testing.T) {
 			t.Errorf("Hash failed Avalanche test with %v bits\n", B[i])
 		}
 	}
+}
+
+func TestEstimateFalsePositives(t *testing.T) {
+	// If we overload the hash any input should appear to be a set member
+	if EstimateFalsePositives(2, 8, 256) != 1.0 {
+		t.Errorf("Bad false positive probability estimate")
+	}
+
+	// If we've put nothing in the hash, there can't be false positives
+	if EstimateFalsePositives(2, 8, 0) != 0.0 {
+		t.Errorf("Bad false positive probability estimate")
+	}
+
+	// If we put four items into an 8 bit filter, it's possible that with
+	// one hash round all four items are assigned distinct bits, however,
+	// it isn't expected.
+	if EstimateFalsePositives(1, 8, 4) > 0.5 {
+		t.Errorf("Bad false positive probability estimate")
+	}
+
+	// Likewise, if we put eight items in, it's possible that all of
+	// them get assigned to the same bit, but it isn't expected.
+	if EstimateFalsePositives(1, 8, 8) < 0.5 {
+		t.Errorf("Bad false positive probability estimate")
+	}
+
+	// This is a bit contrived, but by way of hand calculations,
+	// these estimations should straddle 0.5
+	lower := EstimateFalsePositives(1, 64, 44)
+	upper := EstimateFalsePositives(1, 64, 45)
+	if lower >= 0.5 || upper <= 0.5 {
+		t.Errorf("Bad false positive probability estimate")
+	}
+}
+
+func TestBloomEstimateFalsePositives(t *testing.T) {
+	// This is a very simple test of convergence. We ought to be able to
+	// build a bloom filter and estimate its false positive probability,
+	// then show that many applications of Test using random input
+	// forms a hit-rate that approaches the estimate.
+
+	var m uint64 = 65536
+
+	trials := 100000
+	hits := 0
+	members := m / 3
+
+	b := NewBloom(m, 1)
+	for i := 0; uint64(i) < members; i++ {
+		b.Insert(randByteSlice(50))
+	}
+
+	estimate := b.EstimateFalsePositives(members)
+
+	for i := 0; i < trials; i++ {
+		val := randByteSlice(100)
+		if b.Test(val) {
+			hits++
+		}
+		// If we've iterated enough and the hit rate is within a percent of the estimate, stop.
+		if i > 100 && (((float64(hits)/float64(i))-estimate)/estimate) < 0.01 {
+			return
+		}
+	}
+	t.Errorf("Failed to approach the estimate")
 }

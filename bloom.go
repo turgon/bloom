@@ -2,6 +2,7 @@ package bloom
 
 import (
 	"github.com/spaolacci/murmur3"
+	"math"
 )
 
 type Bloom struct {
@@ -69,4 +70,13 @@ func (b *Bloom) Test(value []byte) bool {
 		}
 	}
 	return true
+}
+
+func EstimateFalsePositives(k uint, m uint64, numItems uint64) float64 {
+	exponent := -1.0 * float64(k) * float64(numItems) / float64(m)
+	return math.Pow((1.0 - math.Exp(exponent)), float64(k))
+}
+
+func (b *Bloom) EstimateFalsePositives(numItems uint64) float64 {
+	return EstimateFalsePositives(b.k, b.m, numItems)
 }
