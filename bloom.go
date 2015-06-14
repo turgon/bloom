@@ -80,3 +80,7 @@ func EstimateFalsePositives(k uint, m uint64, numItems uint64) float64 {
 func (b *Bloom) EstimateFalsePositives(numItems uint64) float64 {
 	return EstimateFalsePositives(b.k, b.m, numItems)
 }
+
+func OptimalHashNumber(m uint64, numItems uint64) float64 {
+	return (float64(m) / float64(numItems)) * math.Log(2.0)
+}

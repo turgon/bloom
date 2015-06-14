@@ -173,3 +173,19 @@ func TestBloomEstimateFalsePositives(t *testing.T) {
 	}
 	t.Errorf("Failed to approach the estimate")
 }
+
+func TestOptimalHashNumber(t *testing.T) {
+	// If our calculation has actually found a k that minimizes the
+	// false probability rate, then we ought to be able to try it
+	// against other values of k and see that it's better.
+	var m uint64 = 1024
+	var n uint64 = 64
+	k := uint(OptimalHashNumber(m, n))
+	estimate := EstimateFalsePositives(k, m, n)
+	for i := 1; uint64(i) < 20; i++ {
+		est := EstimateFalsePositives(uint(i), m, n)
+		if est < estimate {
+			t.Errorf("optimal hash calculation returned wrong k")
+		}
+	}
+}
