@@ -20,6 +20,35 @@ Now, to test whether an item is in the set, we follow the same procedure of hash
 
 It's worth noting that any other input value has a 1/64 chance of being hashed into the same bit as our original item. This is precisely how false positives come to be!
 
+# How do I use it?
+
+Here's a simple example:
+
+```golang
+
+package main
+
+import (
+	"fmt"
+	"github.com/turgon/bloom"
+)
+
+func main() {
+	b := bloom.NewBloom(64, 1)
+
+	b.Insert([]byte("test"))
+
+	if b.Test([]byte("test")) {
+		fmt.Println("The test member is in the set!")
+	}
+
+	if b.Test([]byte("not test")) {
+		fmt.Println("A non-set member is  in the set! Oh no!")
+	}
+}
+
+```
+
 
 [1]: http://en.wikipedia.org/wiki/Bloom_filter
 [2]: http://astrometry.net/svn/trunk/documents/papers/dstn-review/papers/bloom1970.pdf
