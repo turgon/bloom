@@ -2,6 +2,8 @@
 
 A Bloom filter implementation in Golang.
 
+Documentation can be found [on godocs.org][5]
+
 Pull requests and feedback are welcome!
 
 # What is a Bloom filter?
@@ -23,4 +25,4 @@ It's worth noting that any other input value has a 1/64 chance of being hashed i
 [2]: http://astrometry.net/svn/trunk/documents/papers/dstn-review/papers/bloom1970.pdf
 [3]: http://www.eecs.harvard.edu/~kirsch/pubs/bbbf/esa06.pdf
 [4]: http://spyced.blogspot.com/2009/01/all-you-ever-wanted-to-know-about.html
-
+[5]: https://godoc.org/github.com/turgon/bloom
