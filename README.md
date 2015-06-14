@@ -24,8 +24,7 @@ It's worth noting that any other input value has a 1/64 chance of being hashed i
 
 Here's a simple example:
 
-```golang
-
+```go
 package main
 
 import (
