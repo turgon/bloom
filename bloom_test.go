@@ -5,6 +5,20 @@ import (
 	"testing"
 )
 
+func ExampleEasy() {
+	b := NewBloom(64, 1)
+
+	b.Insert([]byte("test"))
+
+	if b.Test([]byte("test")) {
+		// True!
+	}
+
+	if b.Test([]byte("not test")) {
+		// Probably False!
+	}
+}
+
 func TestNewBloom(t *testing.T) {
 	s := NewBloom(64, 1)
 	if s.k != 1 {
