@@ -84,3 +84,9 @@ func (b *Bloom) EstimateFalsePositives(numItems uint64) float64 {
 func OptimalHashNumber(m uint64, numItems uint64) float64 {
 	return (float64(m) / float64(numItems)) * math.Log(2.0)
 }
+
+func OptimalFilterSize(numItems uint64, maxFalseProbability float64) uint64 {
+	numer := float64(numItems) * math.Log(maxFalseProbability)
+	denom := math.Pow(math.Log(2.0), 2.0)
+	return uint64(math.Ceil(-1.0 * numer / denom))
+}

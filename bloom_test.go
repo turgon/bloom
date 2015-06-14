@@ -189,3 +189,19 @@ func TestOptimalHashNumber(t *testing.T) {
 		}
 	}
 }
+
+func TestOptimalFilterSize(t *testing.T) {
+	// If our calculation has actually minimized the filter size while
+	// maintaining a false probability rate as given, then every smaller
+	// filter must have a false probability that exceeds p.
+	var n uint64 = 64
+	var p float64 = 0.01
+
+	best := OptimalFilterSize(n, p)
+
+	for i := 1; uint64(i) < best; i++ {
+		if EstimateFalsePositives(1, uint64(i), n) < p {
+			t.Errorf("optimal filter size calculation is wrong")
+		}
+	}
+}
