@@ -111,8 +111,17 @@ func (b *Bloom) EstimateFalsePositives(numItems uint64) float64 {
 // OptimalHashNumber takes the size of a bloom filter and the number of items
 // you expect to insert and computes the number of hashes that minimizes the
 // false positive probability.
-func OptimalHashNumber(m uint64, numItems uint64) float64 {
-	return (float64(m) / float64(numItems)) * math.Log(2.0)
+func OptimalHashNumber(m uint64, numItems uint64) uint {
+
+	// Unfortunately, we need a whole number of hashes.
+	// Pick the better of floor or ceiling.
+	best := uint((float64(m) / float64(numItems)) * math.Log(2.0))
+	bestEstimate := EstimateFalsePositives(best, m, numItems)
+	nextBestEstimate := EstimateFalsePositives(best + 1, m, numItems)
+	if bestEstimate <= nextBestEstimate {
+		return best
+	}
+	return best+1
 }
 
 // OptimalFilterSize takes the number of items you expect to insert into a

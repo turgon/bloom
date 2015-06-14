@@ -180,7 +180,7 @@ func TestOptimalHashNumber(t *testing.T) {
 	// against other values of k and see that it's better.
 	var m uint64 = 1024
 	var n uint64 = 64
-	k := uint(OptimalHashNumber(m, n))
+	k := OptimalHashNumber(m, n)
 	estimate := EstimateFalsePositives(k, m, n)
 	for i := 1; uint64(i) < 20; i++ {
 		est := EstimateFalsePositives(uint(i), m, n)
