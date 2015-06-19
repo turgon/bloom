@@ -44,9 +44,7 @@ func NewBloom(m uint64, k uint) Bloom {
 // A helper function that hashes input using murmur3 and returns the
 // uint64 pair.
 func murmur3_128(value []byte) (uint64, uint64) {
-	var h murmur3.Hash128 = murmur3.New128()
-	h.Write(value)
-	return h.Sum128()
+	return murmur3.Sum128(value)
 }
 
 // hasher implements BloomHasher on a Bloom structure, taking input and

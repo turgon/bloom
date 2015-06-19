@@ -205,3 +205,10 @@ func TestOptimalFilterSize(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkHasher(b *testing.B) {
+	x := NewBloom(1024, 1)
+	for i := 0; i < b.N; i++ {
+		hasher(&x, []byte("test"))
+	}
+}
