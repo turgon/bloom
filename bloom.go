@@ -11,6 +11,8 @@ import (
 //	m: the size of the filter in bits
 //	collection: the internal m bits of the filter
 //	hasher: a function that returns the bit positions for some input.
+// The hasher element gives the caller the ability to replace Murmur3
+// with a different hashing algorithm if they wish.
 type Bloom struct {
 	k          uint
 	m          uint64
@@ -18,7 +20,9 @@ type Bloom struct {
 	hasher     BloomHasher
 }
 
-type BloomHasher func(b *Bloom, value []byte) []uint64
+// BloomHasher is a type interface that must be met by the function
+// used to hash into bit locations.
+type BloomHasher func(value []byte) (uint64, uint64)
 
 // NewBloom returns a properly constructed Bloom structure given a filter
 // size of m and k hashes. The default hasher is Murmur3, but a custom
@@ -46,32 +50,22 @@ func NewBloom(m uint64, k uint) Bloom {
 	return b
 }
 
-// A helper function that hashes input using murmur3 and returns the
+// A helper function that hashes input using Murmur3 and returns the
 // uint64 pair.
-func murmur3_128(value []byte) (uint64, uint64) {
+var hasher = func(value []byte) (uint64, uint64) {
 	return murmur3.Sum128(value)
-}
-
-// hasher implements BloomHasher on a Bloom structure, taking input and
-// returning a list of bit positions for the filter.
-var hasher = func(b *Bloom, value []byte) []uint64 {
-	v1, v2 := murmur3_128(value)
-
-	positions := make([]uint64, b.k)
-	for i := range positions {
-		positions[i] = ((v1 + uint64(i)*v2) % b.m)
-	}
-	return positions
 }
 
 // Insert takes a byte slice and adds it to the bloom filter. After this is
 // called, the filter's Test method will return True for the same input.
 func (b *Bloom) Insert(value []byte) {
-	positions := b.hasher(b, value)
+	v1, v2 := b.hasher(value)
 
-	for _, pos := range positions {
-		var slot = pos / 64
-		var offset = uint((pos - slot*64) % 64)
+	for i := uint(0); i < b.k; i++ {
+		pos := ((v1 + uint64(i)*v2) % b.m)
+
+		slot := pos / 64
+		offset := uint((pos - slot*64) % 64)
 
 		b.collection[slot] |= (1 << offset)
 	}
@@ -79,13 +73,15 @@ func (b *Bloom) Insert(value []byte) {
 
 // Test takes a byte slice and checks to see if is in the filter. If it returns
 // true, then the input is probably a member of the set the filter reresents.
-// If it returns false, then the  input is definitely not a member of the set.
+// If it returns false, then the input is definitely not a member of the set.
 func (b *Bloom) Test(value []byte) bool {
-	positions := b.hasher(b, value)
+	v1, v2 := b.hasher(value)
 
-	for _, pos := range positions {
-		var slot = pos / 64
-		var offset = uint((pos - slot*64) % 64)
+	for i := uint(0); i < b.k; i++ {
+		pos := ((v1 + uint64(i)*v2) % b.m)
+
+		slot := pos / 64
+		offset := uint((pos - slot*64) % 64)
 
 		if (b.collection[slot] & (1 << offset)) == 0 {
 			return false

@@ -45,9 +45,6 @@ func TestJustTest(t *testing.T) {
 
 func TestInsertAndTest(t *testing.T) {
 	b := NewBloom(128, 1)
-	b.hasher = func(b *Bloom, value []byte) []uint64 {
-		return make([]uint64, 1)
-	}
 	b.Insert([]byte("test"))
 	if !b.Test([]byte("test")) {
 		t.Errorf("Insert or Test broken")
@@ -86,8 +83,8 @@ func TestAvalanche(t *testing.T) {
 			tweaked[i][j] = inputs[i][j]
 		}
 		tweaked[i][rand.Intn(wordLen)] ^= (1 << uint(rand.Intn(8)))
-		inputsc[i][0], inputsc[i][1] = murmur3_128(inputs[i])
-		tweakedc[i][0], tweakedc[i][1] = murmur3_128(tweaked[i])
+		inputsc[i][0], inputsc[i][1] = hasher(inputs[i])
+		tweakedc[i][0], tweakedc[i][1] = hasher(tweaked[i])
 
 		avalanche[i][0] = inputsc[i][0] ^ tweakedc[i][0]
 		avalanche[i][1] = inputsc[i][1] ^ tweakedc[i][1]
@@ -232,8 +229,21 @@ func TestOptimalFilterSize(t *testing.T) {
 }
 
 func BenchmarkHasher(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		hasher([]byte("test"))
+	}
+}
+
+func BenchmarkInsert(b *testing.B) {
 	x := NewBloom(1024, 1)
 	for i := 0; i < b.N; i++ {
-		hasher(&x, []byte("test"))
+
+		d := make([]byte, 4)
+		d[0] = byte(i)
+		d[1] = byte(i >> 8)
+		d[2] = byte(i >> 16)
+		d[3] = byte(i >> 24)
+
+		x.Insert(d)
 	}
 }
