@@ -25,6 +25,11 @@ type BloomHasher func(b *Bloom, value []byte) []uint64
 // hasher can be built that implements BloomHasher and overrides the filter's
 // hashing function.
 func NewBloom(m uint64, k uint) Bloom {
+	// The filter allocates storage in 64-bit chunks, not bits,
+	// so it will up-size itself to ensure it has enough storage
+	// for m. It doesn't change m, so there can be up to 63 bits
+	// allocated that are wasted. Make m divisible by 64 if you
+	// want optimal storage.
 
 	var length uint64 = m / 64
 	if m%64 > 0 {

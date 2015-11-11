@@ -6,7 +6,11 @@ import (
 )
 
 func TestNewBloom(t *testing.T) {
-	s := NewBloom(64, 1)
+	var s Bloom
+
+	// Simple test. If we ask for a 64 bit filter with k=1,
+	// then that's exactly what we ought to get.
+	s = NewBloom(64, 1)
 	if s.k != 1 {
 		t.Errorf("NewBloom returned wrong hashes for filter")
 	}
@@ -14,6 +18,20 @@ func TestNewBloom(t *testing.T) {
 		t.Errorf("NewBloom returned wrong filter size")
 	}
 	if cap(s.collection) != 1 {
+		t.Errorf("NewBloom built wrong sized collection of uint64s")
+	}
+
+	// Slightly more complex test. The filter allocates storage
+	// in increments of 64, not single bits. Make sure it has
+	// up-sized properly.
+	s = NewBloom(65, 1)
+	if s.k != 1 {
+		t.Errorf("NewBloom returned wrong hashes for filter")
+	}
+	if s.m != 65 {
+		t.Errorf("NewBloom returned wrong filter size: %v != 65", s.m)
+	}
+	if cap(s.collection) != 2 {
 		t.Errorf("NewBloom built wrong sized collection of uint64s")
 	}
 }
