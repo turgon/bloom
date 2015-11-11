@@ -178,14 +178,21 @@ func TestOptimalHashNumber(t *testing.T) {
 	// If our calculation has actually found a k that minimizes the
 	// false probability rate, then we ought to be able to try it
 	// against other values of k and see that it's better.
-	var m uint64 = 1024
-	var n uint64 = 64
-	k := OptimalHashNumber(m, n)
-	estimate := EstimateFalsePositives(k, m, n)
-	for i := 1; uint64(i) < 20; i++ {
-		est := EstimateFalsePositives(uint(i), m, n)
-		if est < estimate {
-			t.Errorf("optimal hash calculation returned wrong k")
+	var m uint64
+	var n uint64
+
+	// range over some combinations of m, n in order to
+	// get OptimalHashNumber to switch on best rate.
+	for m = 1024; m <= 4096; m *= 2 {
+		for n = 64; n <= 4*64; n += 64 {
+			k := OptimalHashNumber(m, n)
+			estimate := EstimateFalsePositives(k, m, n)
+			for i := k-1; i < k+1; i++ {
+				est := EstimateFalsePositives(uint(i), m, n)
+				if est < estimate {
+					t.Errorf("optimal hash calculation returned wrong k (%i) for m=%i and n=%i", k, m, n)
+				}
+			}
 		}
 	}
 }
