@@ -234,8 +234,8 @@ func BenchmarkHasher(b *testing.B) {
 	}
 }
 
-func BenchmarkInsert(b *testing.B) {
-	x := NewBloom(1024, 1)
+func benchmarkInsert(m uint64, k uint, b *testing.B) {
+	x := NewBloom(m, k)
 	for i := 0; i < b.N; i++ {
 
 		d := make([]byte, 4)
@@ -247,3 +247,43 @@ func BenchmarkInsert(b *testing.B) {
 		x.Insert(d)
 	}
 }
+
+func BenchmarkInsert1024_1(b *testing.B) { benchmarkInsert(1024, 1, b) }
+func BenchmarkInsert1024_2(b *testing.B) { benchmarkInsert(1024, 2, b) }
+func BenchmarkInsert1048576_100(b *testing.B) { benchmarkInsert(1048576, 6, b) }
+func BenchmarkInsert1048576_101(b *testing.B) { benchmarkInsert(1048576, 7, b) }
+func BenchmarkInsert134217728_10000(b *testing.B) { benchmarkInsert(134217728, 6, b) }
+func BenchmarkInsert134217728_10001(b *testing.B) { benchmarkInsert(134217728, 7, b) }
+
+func benchmarkTest(n int, m uint64, k uint, b *testing.B) {
+	x := NewBloom(m, k)
+
+	b.StopTimer()
+	for i := 0; i < n; i++ {
+		d := make([]byte, 4)
+		d[0] = byte(i)
+		d[1] = byte(i >> 8)
+		d[2] = byte(i >> 16)
+		d[3] = byte(i >> 24)
+
+		x.Insert(d)
+	}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		d := make([]byte, 4)
+		d[0] = byte(i)
+		d[1] = byte(i >> 8)
+		d[2] = byte(i >> 16)
+		d[3] = byte(i >> 24)
+
+		x.Test(d)
+	}
+}
+
+func BenchmarkTest100_1024_1(b *testing.B) { benchmarkTest(100, 1024, 1, b) }
+func BenchmarkTest100_1024_2(b *testing.B) { benchmarkTest(100, 1024, 2, b) }
+func BenchmarkTest10000_1048576_100(b *testing.B) { benchmarkTest(10000, 1048576, 6, b) }
+func BenchmarkTest10000_1048576_101(b *testing.B) { benchmarkTest(10000, 1048576, 7, b) }
+func BenchmarkTest1000000_134217728_10000(b *testing.B) { benchmarkTest(1000000, 134217728, 6, b) }
+func BenchmarkTest1000000_134217728_10001(b *testing.B) { benchmarkTest(1000000, 134217728, 7, b) }
