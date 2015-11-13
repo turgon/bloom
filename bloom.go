@@ -61,13 +61,17 @@ var hasher = func(value []byte) (uint64, uint64) {
 func (b *Bloom) Insert(value []byte) {
 	v1, v2 := b.hasher(value)
 
+	pos := v1 % b.m
+
 	for i := uint(0); i < b.k; i++ {
-		pos := ((v1 + uint64(i)*v2) % b.m)
 
 		slot := pos / 64
 		offset := uint((pos - slot*64) % 64)
 
 		b.collection[slot] |= (1 << offset)
+
+		pos += v2
+		pos %= b.m
 	}
 }
 
@@ -77,8 +81,9 @@ func (b *Bloom) Insert(value []byte) {
 func (b *Bloom) Test(value []byte) bool {
 	v1, v2 := b.hasher(value)
 
+	pos := v1 % b.m
+
 	for i := uint(0); i < b.k; i++ {
-		pos := ((v1 + uint64(i)*v2) % b.m)
 
 		slot := pos / 64
 		offset := uint((pos - slot*64) % 64)
@@ -86,6 +91,9 @@ func (b *Bloom) Test(value []byte) bool {
 		if (b.collection[slot] & (1 << offset)) == 0 {
 			return false
 		}
+
+		pos += v2
+		pos %= b.m
 	}
 	return true
 }
